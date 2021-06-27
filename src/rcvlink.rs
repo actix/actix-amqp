@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{collections::VecDeque, future::Future, pin::Pin, task::Context, task::Poll};
 
 use ntex::util::{ByteString, BytesMut};
@@ -7,6 +8,7 @@ use ntex_amqp_codec::protocol::{
     Attach, DeliveryNumber, Disposition, Error, Handle, LinkError, ReceiverSettleMode, Role,
     SenderSettleMode, Source, TerminusDurability, TerminusExpiryPolicy, Transfer, TransferBody,
 };
+use ntex_amqp_codec::types::{Symbol, Variant};
 use ntex_amqp_codec::Encode;
 
 use crate::cell::Cell;
@@ -358,6 +360,17 @@ impl ReceiverLinkBuilder {
 
     pub fn max_message_size(mut self, size: u64) -> Self {
         self.frame.max_message_size = Some(size);
+        self
+    }
+
+    /// Set or reset a receive link property
+    pub fn property(mut self, key: Symbol, value: Option<Variant>) -> Self {
+        let props = self.frame.properties.get_or_insert_with(HashMap::default);
+
+        match value {
+            Some(value) => props.insert(key, value),
+            None => props.remove(&key),
+        };
         self
     }
 
